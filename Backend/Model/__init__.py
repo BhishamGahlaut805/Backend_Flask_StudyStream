@@ -1,0 +1,1 @@
+"""Model module containing ML models for predictions."""

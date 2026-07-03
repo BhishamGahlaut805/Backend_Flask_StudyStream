@@ -1,0 +1,13 @@
+Flask==3.0.3
+Flask-Cors==4.0.1
+python-dotenv==1.0.1
+pymongo==4.8.0
+
+tensorflow==2.18.0
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.14.1
+scikit-learn==1.5.2
+
+requests==2.32.3
+gunicorn==23.0.0
