@@ -1,4 +1,3 @@
-import os
 import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -24,8 +23,9 @@ from Blueprint.performance import performance_bp
 
 from Utils.logging import setup_logging
 
+
 def create_app(config_class=None):
-    """Application factory pattern."""
+    """Application Factory"""
 
     if config_class is None:
         config_class = get_config()
@@ -33,66 +33,79 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Setup logging
+    # Logging
     setup_logging(app)
     logger = logging.getLogger(__name__)
 
     # CORS
-    CORS(app, origins=app.config.get('CORS_ORIGINS', '*'))
+    CORS(app, origins=app.config.get("CORS_ORIGINS", "*"))
 
-    # Initialize database
+    # Database
     db = get_db()
     logger.info("Database initialized")
 
-    # Initialize services
+    # Services
     app.training_service = TrainingService(app.config)
     app.prediction_service = PredictionService(app.config)
 
-    # Initialize Retention Model services
     app.retention_training_service = RetentionTrainingService(app.config)
     app.retention_prediction_service = RetentionPredictionService(app.config)
+
     app.schedule_service = ScheduleService(app.config)
     app.performance_service = PerformanceService(app.config)
 
-    # Register blueprints
-    app.register_blueprint(practice_bp, url_prefix='/api/practice')
-    app.register_blueprint(real_exam_bp, url_prefix='/api/real-exam')
-    app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
-    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+    # Blueprints
+    app.register_blueprint(practice_bp, url_prefix="/api/practice")
+    app.register_blueprint(real_exam_bp, url_prefix="/api/real-exam")
+    app.register_blueprint(analysis_bp, url_prefix="/api/analysis")
+    app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
 
-    app.register_blueprint(retention_bp, url_prefix='/api/retention')
-    app.register_blueprint(schedule_bp, url_prefix='/api/retention/schedule')
-    app.register_blueprint(internal_bp, url_prefix='/api/retention/internal')
-    app.register_blueprint(performance_bp, url_prefix='/api/retention/performance')
+    app.register_blueprint(retention_bp, url_prefix="/api/retention")
+    app.register_blueprint(schedule_bp, url_prefix="/api/retention/schedule")
+    app.register_blueprint(internal_bp, url_prefix="/api/retention/internal")
+    app.register_blueprint(performance_bp, url_prefix="/api/retention/performance")
 
-    @app.route('/api/health', methods=['GET'])
+    @app.route("/api/health")
     def health():
-        """Health check endpoint."""
         return jsonify({
-            'success': True,
-            'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
-            'database': 'connected' if get_db().client else 'disconnected',
-            'models': ['learning_velocity', 'burnout_risk', 'adaptive_scheduling']
+            "success": True,
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "database": "connected" if get_db().client else "disconnected",
+            "models": [
+                "learning_velocity",
+                "burnout_risk",
+                "adaptive_scheduling"
+            ]
         })
 
     @app.errorhandler(404)
     def not_found(error):
-        return jsonify({'success': False, 'error': 'Resource not found'}), 404
+        return jsonify({
+            "success": False,
+            "error": "Resource not found"
+        }), 404
 
     @app.errorhandler(500)
     def internal_error(error):
-        logger.error(f"Internal server error: {error}")
-        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+        logger.exception(error)
+        return jsonify({
+            "success": False,
+            "error": "Internal server error"
+        }), 500
 
     logger.info("Application initialized successfully")
     return app
 
 
-if __name__ == '__main__':
-    app = create_app()
+# Gunicorn entrypoint
+app = create_app()
+
+# Local development only
+if __name__ == "__main__":
     app.run(
-        debug=app.config.get('DEBUG', False),
-        host='0.0.0.0',
-        port=int(os.getenv('PORT', 5500))
+        host="0.0.0.0",
+        port=5500,
+        debug=True
     )
+    
